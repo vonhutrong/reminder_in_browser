@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>reminder</title>
+	<link rel="icon" 
+      type="image/png" 
+      href="icon.png">
+	<link rel="stylesheet" href="bootstrap.min.css">
+	<script src="jquery.min.js"></script>
+	<script src="bootstrap.min.js"></script>
+	<script src="bootbox.min.js"></script>
+	<script src="jstorage.js"></script>
+	<script src="date.js"></script>
+	<script src="defaultAppConfig.js"></script>
+	<script>
+		appConfig = null;
+		counter = 0;
+
+		$(document).ready(function() {
+			loadAppConfig();
+
+			audioElement = document.createElement('audio');
+			$("#newSoundPath").on("change", function(e) {
+				var newVal = $("#newSoundPath").val();
+				if (newVal != null && newVal.length > 0) {
+					changeSoundPath(getFileName(newVal));
+				}
+			});
+
+			startApp();
+		});
+
+		function loadAppConfig() {
+			appConfig = $.jStorage.get("appConfig");
+			if (!appConfig) {
+				$.jStorage.set("appConfig", defaultAppConfig);
+			}
+
+			appConfig = $.jStorage.get("appConfig");
+		}
+
+		function updateAppConfig() {
+			$.jStorage.set("appConfig", appConfig);
+		}
+
+		function startApp() {
+			$("#message").text(appConfig.message);
+			$("#timeValue").text(numToTime(appConfig.periodOfTime * 60));
+			setInterval(function() {
+				counter = counter + 1;
+				$("#timer").text(numToTime(appConfig.periodOfTime * 60 - counter));
+				if (counter >= appConfig.periodOfTime * 60) {
+					playSound();
+					counter = 0;
+				}
+			}, 1000);
+		}
+
+		function playSound() {
+			audioElement.setAttribute('src', appConfig.soundPath);
+			audioElement.play();
+		}
+
+		function changePeriodOfTime() {
+			bootbox.prompt({
+			    title: "Enter period of time (in minute)",
+			    inputType: 'number',
+			    size: "small",
+			    callback: function (result) {
+			    	if (result != null && result > 0) {
+					    appConfig.periodOfTime = result;
+						updateAppConfig();
+						location.reload();
+					}
+			    }
+			});
+		}
+
+		function changeSoundPath(filename) {
+			appConfig.soundPath = filename;
+			updateAppConfig();
+		}
+
+		function changeMessage() {
+			bootbox.prompt({
+				title: "Enter message",
+				inputType: "text",
+				callback: function (result) {
+					if (result != null) {
+						appConfig.message = result;
+						updateAppConfig();
+						$("#message").text(result);
+					}
+				}				
+			});
+		}
+
+		function getFileName(s) {
+			var fileNameIndex = s.lastIndexOf("\\") + 1;
+			return s.substr(fileNameIndex);
+		}
+
+		function numToTime(n) {
+			return (new Date).clearTime().addSeconds(n).toString('H:mm:ss')
+		}
+	</script>
+
+	<style type="text/css">
+		.btn-file {
+		    position: relative;
+		    overflow: hidden;
+		}
+		.btn-file input[type=file] {
+		    position: absolute;
+		    top: 0;
+		    right: 0;
+		    min-width: 100%;
+		    min-height: 100%;
+		    font-size: 100px;
+		    text-align: right;
+		    filter: alpha(opacity=0);
+		    opacity: 0;
+		    outline: none;
+		    background: white;
+		    cursor: inherit;
+		    display: block;
+		}
+	</style>
+</head>
+<body>
+	<div class="container text-center">
+		<div class="row">
+			<h1 id="message" style="color: #FF9800;"></h1>
+		</div>
+		<div class="row">
+			<h2 style="color: #CDDC39;"><span id="timer">0:00:00</span> / <span id="timeValue"></span></h2>
+		</div>
+		<div class="row">
+			<div class="col-md-2 col-md-offset-5">
+				<div class="row" style="padding-top: 10px;">
+					<button class="btn btn-primary btn-block" onclick="changePeriodOfTime()">Change time</button>
+				</div>
+				<div class="row" style="padding-top: 10px;">
+					<label class="btn btn-primary btn-file btn-block">
+					    Change sound <input type="file" id="newSoundPath" accept=".mp3,audio/*" style="display: none;">
+					</label>
+				</div>
+				<div class="row" style="padding-top: 10px;">
+					<button class="btn btn-primary btn-block" onclick="changeMessage()">Change message</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
